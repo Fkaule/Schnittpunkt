@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Schnittpunkt: Säge-Spur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Big+Shoulders+Stencil:wght@800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <h1 class="brand">Schnittpunkt</h1>
+    <p class="claim">Station 2: Säge-Spur. Die Säge wandert am Träger entlang, und aus vielen Schnitten wird der Querkraftverlauf.</p>
+    <div class="nav">
+      <nav class="stations" aria-label="Station wählen"><a href="index.html">1 Festhalten</a><a href="spur.html" aria-current="page">2 Säge-Spur</a></nav>
+      <nav class="levels" id="levels" aria-label="Level wählen"></nav>
+    </div>
+  </header>
+
+  <main class="stage">
+    <section class="sheet" aria-label="Zeichnung">
+      <p class="howto" id="howto"></p>
+      <div class="canvas-wrap" id="wrap">
+        <canvas id="cv" aria-label="Träger mit Säge, darunter das Diagramm der Querkraft"></canvas>
+        <div class="stamp" id="stamp" hidden></div>
+      </div>
+      <ul class="legend" aria-label="Legende">
+        <li><i style="background: var(--cQ)"></i>Q: Querkraft, positiv nach unten</li>
+        <li><i style="background: var(--accent)"></i>Ihre Spur</li>
+        <li><i style="background: var(--react)"></i>Lagerkraft</li>
+        <li><i style="background: var(--ink)"></i>Last</li>
+      </ul>
+    </section>
+
+    <aside class="side">
+      <table class="titleblock" aria-label="Schriftfeld">
+        <tbody>
+          <tr><th>Level</th><td id="tb-name"></td></tr>
+          <tr><th>Aufgabe</th><td class="txt" id="tb-task"></td></tr>
+          <tr><th>Treffer</th><td id="tb-hits"></td></tr>
+          <tr><th>Sterne</th><td class="big" id="tb-stars"></td></tr>
+        </tbody>
+      </table>
+      <div class="forces" id="qbox" role="group" aria-label="Q an der Säge">
+        <h2>Q an der Säge</h2>
+        <div class="frow"><span class="fk q">Q</span><button type="button" data-d="-1" title="nach oben, negativ">↑</button><output id="v-Q"></output><button type="button" data-d="1" title="nach unten, positiv">↓</button></div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn primary" id="b-main">Prüfen</button>
+        <button type="button" class="btn" id="b-tip">Tipp</button>
+        <button type="button" class="btn" id="b-alt">Spur löschen</button>
+      </div>
+      <div class="verdict" id="verdict" aria-live="polite"></div>
+    </aside>
+  </main>
+</div>
+<script src="src/mech.js"></script>
+<script src="src/draw.js"></script>
+<script src="src/spur-levels.js"></script>
+<script src="src/spur.js"></script>
+</body>
+</html>

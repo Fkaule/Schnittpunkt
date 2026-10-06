@@ -43,5 +43,24 @@ const rk = MECH.reactions(LEVELS[1]);
 check('Kragarm Einspannung Fz', rk[0].f[1], -2);
 check('Kragarm Einspannmoment', rk[0].m, 8);
 
+// Station 2: Querkraftverläufe und Werte an den Halten, von Hand gerechnet (Q positiv nach unten am linken Stück)
+const SPUR = require('../src/spur-levels.js');
+const wantTrace = [
+  [[0, 0], [0, 2], [2, 2], [2, -2], [4, -2], [4, 0]],                                   // A = B = 2
+  [[0, 0], [0, 2.5], [1, 2.5], [1, 0.5], [3, 0.5], [3, -3.5], [4, -3.5], [4, 0]],      // A = 2,5, B = 3,5
+  [[0, 0], [0, -1], [2, -1], [2, -3], [4, -3], [4, 0]],                                 // Kragarm, Einspannung rechts
+  [[0, 0], [0, 0], [4, -4], [4, 0]],                                                    // Q = −x
+  [[0, 0], [0, 3], [1, 3], [1, -1], [4, -1], [4, 0]],                                   // A = 3, B = 1
+  [[0, 0], [0, 2], [4, -2], [4, 0]],                                                    // A = B = 2, linear
+  [[0, 0], [0, -2], [2, -2], [2, 2], [4, 2], [4, 0]]                                    // A = 2 nach unten, B = 4
+];
+const wantStops = [[2, -2], [2.5, 0.5, -3.5], [-1, -3], [-1, -2, -3]];
+SPUR.forEach((lv, k) => {
+  const tr = MECH.traceQ(lv), w = wantTrace[k];
+  if (tr.length !== w.length) { fails++; console.log(`FEHLER Spur ${k + 1} ${lv.name}: ${JSON.stringify(tr)}`); return; }
+  tr.forEach((p, j) => { check(`Spur ${k + 1} Punkt ${j} s`, p[0], w[j][0]); check(`Spur ${k + 1} Punkt ${j} Q`, p[1], w[j][1]); });
+  (lv.stops || []).forEach((s, j) => check(`Spur ${k + 1} Halt bei ${s} m`, MECH.hold(lv, s, 'minus').Q, wantStops[k][j]));
+});
+
 console.log(fails ? `${fails} Fehler` : 'Alle Prüfungen bestanden');
 process.exit(fails ? 1 : 0);

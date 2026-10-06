@@ -77,6 +77,22 @@
     return { c, ax, sign, F: F.map(clean), M: clean(M), ...nqm(ax, sign, F, M) };
   }
 
-  const MECH = { axes, point, loadsIn, reactions, hold, nqm, mom };
+  // Querkraftverlauf als Linienzug [[s, Q], ...] von s = 0 bis L, Q wie am linken Teilstück (positives Schnittufer):
+  // senkrechte Sprünge an Einzelkräften und Lagern, dazwischen gerade (konstant oder unter Streckenlast linear)
+  function traceQ(lv) {
+    const L = axes(lv.member).L, e = 1e-7, r6 = v => Math.round(v * 1e6) / 1e6 + 0, at = new Set([0, L]);
+    for (const ld of lv.loads) { if (ld.q) { at.add(ld.s0); at.add(ld.s1); } else at.add(ld.s); }
+    for (const sp of lv.supports) at.add(sp.s);
+    const xs = [...at].filter(s => s >= 0 && s <= L).sort((a, b) => a - b), Q = s => r6(hold(lv, s, 'minus').Q);
+    const pts = [[0, 0]];
+    for (let k = 0; k + 1 < xs.length; k++) {
+      const a = xs[k], b = xs[k + 1];
+      if (b - a > 1e-9) pts.push([a, Q(a + e)], [b, Q(b - e)]);
+    }
+    pts.push([L, 0]);
+    return pts;
+  }
+
+  const MECH = { axes, point, loadsIn, reactions, hold, nqm, mom, traceQ };
   if (typeof module !== 'undefined' && module.exports) module.exports = MECH; else root.MECH = MECH;
 })(this);
