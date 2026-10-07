@@ -1,6 +1,7 @@
 # Schnittpunkt
 
-Lernspiel zu Schnittgrößen für Technische Mechanik 1, als Lernpfad aus Stationen.
+Lernspiel zu Schnittgrößen für Technische Mechanik 1, als Lernpfad aus Stationen. Vorstufe davor: [Drehpunkt](https://fkaule.github.io/Drehpunkt/)
+(Kräfte, Momente und Lager freischneiden und halten, gleiche Mechanik wie Station 1, nur am Lager statt im Träger).
 
 - **Station 1 „Festhalten“** (`index.html`): Ein Träger wird durchgesägt, die Zeit steht still, und das abgeschnittene Stück muss
   mit den richtigen Kräften an der Schnittstelle gehalten werden. Wer loslässt, sieht, ob es hält. Danach folgen die Vorzeichen nach dem Schnittufer.
