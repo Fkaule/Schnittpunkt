@@ -93,6 +93,26 @@
     return pts;
   }
 
-  const MECH = { axes, point, loadsIn, reactions, hold, nqm, mom, traceQ };
+  // Momentenverlauf als Linienzug [[s, M], ...]: gleichmäßig im Abstand step, dazu jede Knickstelle (Kraft, Lager, Ende einer
+  // Streckenlast). M wie am linken Teilstück, positiv bei Zug unten
+  function traceM(lv, step = 0.02) {
+    const L = axes(lv.member).L, r6 = v => Math.round(v * 1e6) / 1e6 + 0, xs = new Set([0, L]);
+    for (let k = 0; k * step < L; k++) xs.add(r6(k * step));
+    for (const ld of lv.loads) { if (ld.q) { xs.add(ld.s0); xs.add(ld.s1); } else xs.add(ld.s); }
+    for (const sp of lv.supports) xs.add(sp.s);
+    return [...xs].filter(s => s >= 0 && s <= L).sort((a, b) => a - b).map(s => [s, r6(hold(lv, s, 'minus').My)]);
+  }
+  // größtes Moment und seine Stelle, abgetastet im Abstand step (bei gleich großen Werten die erste Stelle)
+  function peakM(lv, step = 0.005) {
+    const L = axes(lv.member).L;
+    let best = { x: 0, M: -Infinity };
+    for (let k = 0; k * step <= L + 1e-9; k++) {
+      const x = Math.min(L, Math.round(k * step * 1e6) / 1e6), M = hold(lv, x, 'minus').My;
+      if (M > best.M + 1e-9) best = { x, M };
+    }
+    return { x: best.x, M: Math.round(best.M * 1e6) / 1e6 + 0 };
+  }
+
+  const MECH = { axes, point, loadsIn, reactions, hold, nqm, mom, traceQ, traceM, peakM };
   if (typeof module !== 'undefined' && module.exports) module.exports = MECH; else root.MECH = MECH;
 })(this);

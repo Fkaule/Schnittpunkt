@@ -6,7 +6,7 @@
   const FS = 0.3;            // Kraftpfeile: m je kN, in allen Stationen gleich, damit sich Pfeile vergleichen lassen
   const MS = Math.PI / 6;    // Momentenbogen: 30° je kNm
   const HB = 0.16, GAP = 0.06, RSAW = 0.3;   // Trägerhöhe, Sägespalt, Radius des Sägeblatts (m)
-  const num = v => (v < -1e-9 ? '−' : '') + (Math.round(Math.abs(v) * 10) / 10).toLocaleString('de-DE');
+  const num = v => (v < -1e-9 ? '−' : '') + (Math.round(Math.abs(v) * 1000) / 1000).toLocaleString('de-DE');   // bis drei Nachkommastellen, 2,25 bleibt 2,25
   const signed = v => (v > 1e-9 ? '+' : '') + num(v);
   const add = (p, v, k = 1) => [p[0] + v[0] * k, p[1] + v[1] * k];
   const neg = v => [-v[0], -v[1]];
