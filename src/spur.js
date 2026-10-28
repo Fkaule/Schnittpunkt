@@ -14,11 +14,14 @@
   const TOL = 0.3;      // die Spur trifft, wenn sie höchstens so weit danebenliegt (kN)
   const STEP = 0.5;
   const KEY = 'schnittpunkt-spur';
+  // Eigener Träger aus dem Baukasten (Link #bau-…): das einzige Level, Sterne werden nicht gespeichert
+  const EIGEN = BAU.spur(location.hash, SPUR[4]);
+  const LV = EIGEN ? [EIGEN] : SPUR;
   const C = {};
   let G = null;
   const st = {
     i: 0, lv: null, ax: null, react: [], tr: [], truth: [], phase: 'draw', k: 0, saw: -0.6, scan: null, shown: -1,
-    guess: 0, guesses: [], pen: [], last: null, got: 0, score: 0, tip: false, touched: false, anim: null, drag: false, now: 0,
+    guess: 0, guesses: [], pen: [], last: null, got: 0, score: 0, tip: false, touched: false, anim: null, drag: false, now: 0, shared: '',
     stars: readStars()
   };
   // Halte: move (Säge fährt), guess (Q einstellen), scan (aufdecken), result; nach dem letzten Halt scan bis zum Ende, dann done.
@@ -27,11 +30,11 @@
   function readStars() {
     try {
       const a = JSON.parse(localStorage.getItem(KEY));
-      if (Array.isArray(a)) return SPUR.map((_, k) => Math.min(3, a[k] | 0));
+      if (Array.isArray(a) && !EIGEN) return LV.map((_, k) => Math.min(3, a[k] | 0));
     } catch (e) { /* ohne Speicher geht es auch */ }
-    return SPUR.map(() => 0);
+    return LV.map(() => 0);
   }
-  function saveStars() { try { localStorage.setItem(KEY, JSON.stringify(st.stars)); } catch (e) { /* ohne Speicher */ } }
+  function saveStars() { if (EIGEN) return; try { localStorage.setItem(KEY, JSON.stringify(st.stars)); } catch (e) { /* ohne Speicher */ } }
 
   // ---------- Zahlen und Geometrie ----------
   const zero = v => Math.abs(v) < 1e-6;
@@ -263,11 +266,11 @@
     levelsNav(); panel(); render();
   }
   function loadLevel(i) {
-    st.i = i; st.lv = SPUR[i]; st.ax = MECH.axes(st.lv.member); st.react = MECH.reactions(st.lv); st.tr = MECH.traceQ(st.lv);
+    st.i = i; st.lv = LV[i]; st.ax = MECH.axes(st.lv.member); st.react = MECH.reactions(st.lv); st.tr = MECH.traceQ(st.lv);
     const brk = breaks();   // an den Sprüngen wird nicht gewertet
     st.truth = Array.from({ length: N + 1 }, (_, k) => (brk.some(b => Math.abs(b - xOfK(k)) < 0.06) ? null : Qat(xOfK(k))));
     Object.assign(st, { k: 0, saw: -0.6, scan: null, shown: -1, guess: 0, guesses: [], pen: new Array(N + 1).fill(null), last: null,
-      got: 0, score: 0, tip: false, touched: false, anim: null, drag: false, phase: st.lv.mode === 'stops' ? 'move' : 'draw' });
+      got: 0, score: 0, tip: false, touched: false, anim: null, drag: false, shared: '', phase: st.lv.mode === 'stops' ? 'move' : 'draw' });
     $('stamp').hidden = true;
     levelsNav(); layout(); panel(); render();
     if (st.lv.mode === 'stops') moveTo(st.lv.stops[0]);
@@ -275,7 +278,7 @@
 
   // ---------- Oberfläche ----------
   function levelsNav() {
-    $('levels').innerHTML = SPUR.map((lv, k) => `<button type="button" data-k="${k}" aria-pressed="${k === st.i}" title="${lv.name}"
+    $('levels').innerHTML = LV.map((lv, k) => `<button type="button" data-k="${k}" aria-pressed="${k === st.i}" title="${lv.name}"
       aria-label="Level ${k + 1}: ${lv.name}, ${st.stars[k]} von 3 Sternen">${k + 1}<span class="st">${starStr(st.stars[k])}</span></button>`).join('');
   }
   // Was links der Säge wirkt, nach Lage geordnet, und was daraus für Q folgt
@@ -304,14 +307,14 @@
     if (ph === 'run') return '<p>Die Säge deckt auf: grün trifft, rot liegt daneben.</p>';
     const head = lv.mode === 'stops' ? `${st.guesses.filter(g => g.right).length} von ${st.guesses.length} Halten richtig.` : `Treffer: ${Math.round(st.score * 100)} %.`;
     const rule = lv.mode === 'stops' ? 'Sterne: alle Halte richtig drei, einer daneben zwei, sonst einer.' : 'Sterne ab 70, 85 und 95 % Treffer. Gewertet wird die ganze Länge außer direkt an den Sprüngen.';
-    const end = st.i + 1 === SPUR.length ? '<p><b>Station 2 geschafft.</b> Als Nächstes käme Station 3, die Wäscheleine: Dort geht es um die Form des Momentenverlaufs.</p>' : '';
+    const end = EIGEN ? BAU.challengeHtml(lv, Math.round(st.score * 100), st.shared) : st.i + 1 === SPUR.length ? '<p><b>Station 2 geschafft.</b> Als Nächstes käme Station 3, die Wäscheleine: Dort geht es um die Form des Momentenverlaufs.</p>' : '';
     return `<p class="${st.got ? 't-ok' : 't-bad'}">${head}</p><p>${lv.aha}</p><p class="tip">${rule}</p>${end}`;
   }
   const HOW_STOPS = 'Die Säge hält an. <b>Ziehen</b> Sie den blauen Pfeil im Diagramm auf den Wert von Q: die Kraft, mit der Sie das linke Stück an der Säge halten, positiv nach unten. Dann <b>Prüfen</b>.';
   const HOW_DRAW = '<b>Zeichnen</b> Sie mit gedrückter Maus oder dem Finger den Verlauf von Q ins Diagramm, von links nach rechts, positiv nach unten. Dann <b>Säge los</b>.';
   function panel() {
     const lv = st.lv, ph = st.phase, stops = lv.mode === 'stops';
-    $('tb-name').textContent = `${st.i + 1} von ${SPUR.length}: ${lv.name}`;
+    $('tb-name').textContent = EIGEN ? lv.name : `${st.i + 1} von ${SPUR.length}: ${lv.name}`;
     $('tb-task').textContent = lv.task;
     $('tb-hits').textContent = stops ? (st.guesses.length ? `${st.guesses.filter(g => g.right).length} von ${st.guesses.length}` : 'noch keiner')
       : ph === 'done' ? `${Math.round(st.score * 100)} %` : 'noch offen';
@@ -322,7 +325,7 @@
     $('v-Q').textContent = `${signed(st.guess)} kN`;
     const main = $('b-main');
     main.textContent = { move: 'Prüfen', guess: 'Prüfen', scan: 'Prüfen', draw: 'Säge los', run: 'Säge los',
-      result: st.k + 1 < (lv.stops || []).length ? 'Nächster Halt' : 'Zu Ende fahren', done: st.i + 1 < SPUR.length ? 'Weiter' : 'Von vorn' }[ph];
+      result: st.k + 1 < (lv.stops || []).length ? 'Nächster Halt' : 'Zu Ende fahren', done: EIGEN ? 'Zum Baukasten' : st.i + 1 < SPUR.length ? 'Weiter' : 'Von vorn' }[ph];
     main.disabled = ph === 'move' || ph === 'scan' || ph === 'run' || (ph === 'draw' && !drawn());
     const alt = $('b-alt');
     alt.hidden = !(ph === 'draw' || ph === 'done');
@@ -370,13 +373,16 @@
     if (st.phase === 'guess') check();
     else if (st.phase === 'result') next();
     else if (st.phase === 'draw') run();
-    else if (st.phase === 'done') loadLevel((st.i + 1) % SPUR.length);
+    else if (st.phase === 'done') { if (EIGEN) location.href = `bauen.html#bau-${EIGEN.bau}`; else loadLevel((st.i + 1) % SPUR.length); }
   });
   $('b-alt').addEventListener('click', () => {
     if (st.phase === 'draw') { st.pen = new Array(N + 1).fill(null); panel(); render(); }
     else if (st.phase === 'done') loadLevel(st.i);
   });
   $('b-tip').addEventListener('click', () => { st.tip = true; panel(); });
+  $('verdict').addEventListener('click', e => {
+    if (e.target.closest('#b-share')) BAU.share(st.lv, Math.round(st.score * 100), html => { st.shared = html; panel(); });
+  });
   $('qbox').addEventListener('click', e => {
     const b = e.target.closest('button[data-d]');
     if (!b || st.phase !== 'guess') return;
@@ -386,6 +392,9 @@
   $('levels').addEventListener('click', e => { const b = e.target.closest('button[data-k]'); if (b) loadLevel(+b.dataset.k); });
   addEventListener('resize', () => { layout(); render(); });
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { KIT.colors(C); render(); });
+
+  if (EIGEN) { $('levels').hidden = true; document.querySelector('.stations a[href="bauen.html"]').href = `bauen.html#bau-${EIGEN.bau}`; }
+  addEventListener('hashchange', () => location.reload());   // anderer Träger per Link im selben Tab
 
   KIT.colors(C);
   loadLevel(0);

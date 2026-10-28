@@ -14,22 +14,25 @@
   const N = 160, TOL = 0.4;      // Stützstellen der gezeichneten Leine, Treffer bis 0,4 kNm daneben
   const SNAP = 0.25;             // Raster beim Verschieben der Gewichte (m)
   const KEY = 'schnittpunkt-leine';
+  // Eigener Träger aus dem Baukasten (Link #bau-…): das einzige Level, Sterne werden nicht gespeichert
+  const EIGEN = BAU.leine(location.hash, LEINE[3]);
+  const LV = EIGEN ? [EIGEN] : LEINE;
   const C = {};
   let G = null;
   const st = {
     i: 0, lv: null, loads: [], ax: null, react: [], rope: [], peak: null, phase: 'build', drop: 0, tap: null, pen: [], last: null,
-    tries: 0, ok: false, got: 0, score: 0, tip: false, touched: false, anim: null, drag: null, now: 0, stars: readStars()
+    tries: 0, ok: false, got: 0, score: 0, tip: false, touched: false, anim: null, drag: null, now: 0, shared: '', stars: readStars()
   };
   // build (Gewichte setzen, antippen oder zeichnen, die Gewichte werden noch gehalten), drop (die Leine fällt), hung (ausgewertet)
 
   function readStars() {
     try {
       const a = JSON.parse(localStorage.getItem(KEY));
-      if (Array.isArray(a)) return LEINE.map((_, k) => Math.min(3, a[k] | 0));
+      if (Array.isArray(a) && !EIGEN) return LV.map((_, k) => Math.min(3, a[k] | 0));
     } catch (e) { /* ohne Speicher geht es auch */ }
-    return LEINE.map(() => 0);
+    return LV.map(() => 0);
   }
-  function saveStars() { try { localStorage.setItem(KEY, JSON.stringify(st.stars)); } catch (e) { /* ohne Speicher */ } }
+  function saveStars() { if (EIGEN) return; try { localStorage.setItem(KEY, JSON.stringify(st.stars)); } catch (e) { /* ohne Speicher */ } }
 
   // ---------- Zahlen und Geometrie ----------
   const zero = v => Math.abs(v) < 1e-6;
@@ -141,6 +144,11 @@
       ctx.restore();
       later.push([`Haken ${R.name}: ${num(-R.f[1])} kN`, C.react, [beside(t, [1, 0], 8), beside(t, [-1, 0], 8), beside(t, [0, -1], 12)], {}]);
     }
+    for (const R of st.react) if (R.s > 1e-6 && R.s < len - 1e-6 && R.f[1] > 0) {   // zieht ein Lager nach unten: Abspannung zum Boden
+      const z = ropeZ(R.s), m = [R.s, (z + GROUND) / 2];
+      ctx.save(); ctx.strokeStyle = C.react; ctx.lineWidth = px(2.4); ctx.lineCap = 'round'; line([R.s, z], [R.s, GROUND]); ctx.restore();
+      later.push([`Abspannung ${R.name}: ${num(R.f[1])} kN`, C.react, [beside(m, [1, 0], 8), beside(m, [-1, 0], 8)], {}]);
+    }
     for (const ld of st.loads) if (!ld.q && ld.s > 1e-6 && ld.s < len - 1e-6) weight(ld, later);   // am Pfosten zieht ein Gewicht nicht an der Leine
   }
   // Vorhersage: Marke beim Antippen, gezeichnete Leine (blau, nach dem Hängen grün, wo sie trifft, rot daneben)
@@ -174,7 +182,9 @@
     let [a, b] = [st.peak.x - 0.3, st.peak.x + 0.3];
     if (st.lv.goal && st.lv.goal.flat && st.ok) { const d = dragLoads().map(ld => ld.s).sort((u, v) => u - v); [a, b] = [d[0], d[d.length - 1]]; }
     const zp = zOf(st.peak.M) - px(6);   // knapp über der Leine, damit sie rot bleibt
-    ctx.save(); ctx.strokeStyle = C.ok; ctx.lineWidth = px(3); ctx.lineCap = 'round'; line([Math.max(0, a), zp], [Math.min(len, b), zp]); ctx.restore();
+    if (st.peak.M > 1e-9) {   // hängt die Leine nirgends durch (M höchstens null, eigener Träger), gibt es keinen tiefsten Punkt
+      ctx.save(); ctx.strokeStyle = C.ok; ctx.lineWidth = px(3); ctx.lineCap = 'round'; line([Math.max(0, a), zp], [Math.min(len, b), zp]); ctx.restore();
+    }
     for (const x of xs) {
       const m = ropeM(x);
       if (zero(m)) continue;
@@ -252,15 +262,15 @@
   }
   // nochmal: Gewichte, Tipp und Zeichnung bleiben, die Leine wird wieder gehalten
   function again() {
-    st.phase = 'build'; st.drop = 0; st.ok = false;
+    st.phase = 'build'; st.drop = 0; st.ok = false; st.shared = '';
     $('stamp').hidden = true;
     panel(); render(); kick();
   }
   function loadLevel(i) {
-    st.i = i; st.lv = LEINE[i]; st.ax = MECH.axes(st.lv.member);
+    st.i = i; st.lv = LV[i]; st.ax = MECH.axes(st.lv.member);
     st.loads = st.lv.loads.map(ld => ({ ...ld }));
     Object.assign(st, { phase: 'build', drop: 0, tap: null, pen: new Array(N + 1).fill(null), last: null, tries: 0, ok: false,
-      got: 0, score: 0, tip: false, touched: false, anim: null, drag: null });
+      got: 0, score: 0, tip: false, touched: false, anim: null, drag: null, shared: '' });
     recompute();
     $('stamp').hidden = true;
     levelsNav(); layout(); panel(); render(); kick();
@@ -268,7 +278,7 @@
 
   // ---------- Oberfläche ----------
   function levelsNav() {
-    $('levels').innerHTML = LEINE.map((lv, k) => `<button type="button" data-k="${k}" aria-pressed="${k === st.i}" title="${lv.name}"
+    $('levels').innerHTML = LV.map((lv, k) => `<button type="button" data-k="${k}" aria-pressed="${k === st.i}" title="${lv.name}"
       aria-label="Level ${k + 1}: ${lv.name}, ${st.stars[k]} von 3 Sternen">${k + 1}<span class="st">${starStr(st.stars[k])}</span></button>`).join('');
   }
   const HOW = {
@@ -293,13 +303,13 @@
     const head = mode === 'place' ? '<p class="t-ok">Passt.</p>'
       : mode === 'tap' ? `<p class="${st.got === 3 ? 't-ok' : 't-bad'}">Am tiefsten hängt die Leine bei ${num(st.peak.x)} m, Ihr Tipp: ${num(st.tap)} m.</p>`
         : `<p class="${st.got ? 't-ok' : 't-bad'}">Treffer: ${Math.round(st.score * 100)} %.</p>`;
-    const end = st.i + 1 === LEINE.length
+    const end = EIGEN ? BAU.challengeHtml(lv, Math.round(st.score * 100), st.shared) : st.i + 1 === LEINE.length
       ? '<p><b>Station 3 geschafft.</b> Als Nächstes käme Station 4, der Verlauf-Detektiv: Fehler in fremden Skizzen finden.</p>' : '';
     return `${head}<p>${lv.aha}</p><p class="tip">${RULE[mode]}</p>${end}`;
   }
   function panel() {
     const lv = st.lv, ph = st.phase, mode = lv.mode;
-    $('tb-name').textContent = `${st.i + 1} von ${LEINE.length}: ${lv.name}`;
+    $('tb-name').textContent = EIGEN ? lv.name : `${st.i + 1} von ${LEINE.length}: ${lv.name}`;
     $('tb-task').textContent = lv.task;
     $('tb-res').textContent = ph !== 'hung' ? (st.tries ? `${st.tries}-mal losgelassen` : 'noch offen')
       : mode === 'place' ? (st.ok ? `geschafft im ${st.tries}. Versuch` : 'noch nicht')
@@ -307,7 +317,7 @@
     $('tb-stars').textContent = starStr(st.stars[st.i]);
     $('howto').innerHTML = HOW[mode];
     const main = $('b-main'), alt = $('b-alt');
-    main.textContent = ph === 'hung' ? (st.ok ? (st.i + 1 < LEINE.length ? 'Weiter' : 'Von vorn') : 'Nochmal') : 'Loslassen';
+    main.textContent = ph === 'hung' ? (st.ok ? (EIGEN ? 'Zum Baukasten' : st.i + 1 < LEINE.length ? 'Weiter' : 'Von vorn') : 'Nochmal') : 'Loslassen';
     main.disabled = ph === 'drop' || (ph === 'build' && !ready());
     alt.hidden = !((ph === 'hung' && st.ok) || (ph === 'build' && mode === 'draw'));
     alt.textContent = ph === 'hung' ? 'Nochmal' : 'Leine löschen';
@@ -371,16 +381,24 @@
 
   $('b-main').addEventListener('click', () => {
     if (st.phase === 'build') release();
-    else if (st.phase === 'hung') { if (st.ok) loadLevel((st.i + 1) % LEINE.length); else again(); }
+    else if (st.phase === 'hung') {
+      if (!st.ok) again(); else if (EIGEN) location.href = `bauen.html#bau-${EIGEN.bau}`; else loadLevel((st.i + 1) % LEINE.length);
+    }
   });
   $('b-alt').addEventListener('click', () => {
     if (st.phase === 'hung') again();
     else if (st.phase === 'build' && st.lv.mode === 'draw') { st.pen = new Array(N + 1).fill(null); panel(); render(); }
   });
   $('b-tip').addEventListener('click', () => { st.tip = true; panel(); });
+  $('verdict').addEventListener('click', e => {
+    if (e.target.closest('#b-share')) BAU.share(st.lv, Math.round(st.score * 100), html => { st.shared = html; panel(); });
+  });
   $('levels').addEventListener('click', e => { const b = e.target.closest('button[data-k]'); if (b) loadLevel(+b.dataset.k); });
   addEventListener('resize', () => { layout(); render(); });
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { KIT.colors(C); render(); });
+
+  if (EIGEN) { $('levels').hidden = true; document.querySelector('.stations a[href="bauen.html"]').href = `bauen.html#bau-${EIGEN.bau}`; }
+  addEventListener('hashchange', () => location.reload());   // anderer Träger per Link im selben Tab
 
   KIT.colors(C);
   loadLevel(0);

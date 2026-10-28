@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Schnittpunkt: Baukasten</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Big+Shoulders+Stencil:wght@800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <h1 class="brand">Schnittpunkt</h1>
+    <p class="claim">Baukasten: Bauen Sie einen eigenen Träger und sagen Sie dann Q oder M vorher. Erst schätzen, dann deckt das Spiel auf.</p>
+    <div class="nav">
+      <nav class="stations" aria-label="Station wählen"><a class="pre" href="https://fkaule.github.io/Drehpunkt/" title="Vorher: Kräfte, Momente und Lager freischneiden und halten">Vorher: Drehpunkt</a><a href="index.html">1 Festhalten</a><a href="spur.html">2 Säge-Spur</a><a href="leine.html">3 Wäscheleine</a><a href="bauen.html" aria-current="page">Baukasten</a></nav>
+    </div>
+  </header>
+
+  <main class="stage">
+    <section class="sheet" aria-label="Zeichnung">
+      <p class="howto"><b>Werkzeug</b> wählen und auf den Träger klicken: Lager und Lasten setzen, eine Streckenlast mit gedrückter Maus ziehen. Ein Klick auf ein Teil wählt es, <b>Ziehen</b> verschiebt es, die Werte ändern Sie unter „Gewählt“. Dann <b>Q zeichnen</b> oder <b>M zeichnen</b>.</p>
+      <div class="canvas-wrap" id="wrap">
+        <canvas id="cv" aria-label="Träger mit Lagern und Lasten zum Bauen"></canvas>
+      </div>
+    </section>
+
+    <aside class="side">
+      <table class="titleblock" aria-label="Schriftfeld">
+        <tbody>
+          <tr><th>Träger</th><td class="txt">4 m, Raster 0,5 m</td></tr>
+          <tr><th>Lager</th><td class="txt" id="tb-sup"></td></tr>
+          <tr><th>Lasten</th><td class="txt" id="tb-loads"></td></tr>
+          <tr><th>Prüfung</th><td class="txt" id="tb-check"></td></tr>
+        </tbody>
+      </table>
+      <div class="forces" role="group" aria-label="Werkzeug">
+        <h2>Werkzeug</h2>
+        <div class="tools" id="tools">
+          <button type="button" data-t="fest">Festlager</button>
+          <button type="button" data-t="los">Loslager</button>
+          <button type="button" data-t="einspannung">Einspannung</button>
+          <button type="button" data-t="last">Einzellast</button>
+          <button type="button" data-t="strecke">Streckenlast</button>
+          <button type="button" data-t="weg">Löschen</button>
+        </div>
+      </div>
+      <div class="forces" id="selbox" role="group" aria-label="Gewähltes Teil"></div>
+      <div class="actions">
+        <button type="button" class="btn primary" id="b-q">Q zeichnen (Säge-Spur)</button>
+        <button type="button" class="btn primary" id="b-m">M zeichnen (Wäscheleine)</button>
+        <button type="button" class="btn" id="b-clear">Alles leeren</button>
+      </div>
+      <div class="verdict" id="verdict" aria-live="polite"></div>
+    </aside>
+  </main>
+</div>
+<script src="src/mech.js"></script>
+<script src="src/draw.js"></script>
+<script src="src/bau.js"></script>
+<script src="src/bauen.js"></script>
+</body>
+</html>
