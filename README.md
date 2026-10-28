@@ -10,6 +10,8 @@ Lernspiel zu Schnittgrößen für Technische Mechanik 1, als Lernpfad aus Statio
 - **Station 3 „Wäscheleine“** (`leine.html`): Eine Leine zwischen zwei Pfosten trägt dieselben Lasten wie der Träger und hängt genau wie
   seine Momentenlinie (Seillinie = M geteilt durch den Horizontalzug). Gewichte setzen, den tiefsten Punkt antippen oder die Leine
   vorher zeichnen, dann loslassen.
+- **Baukasten** (`bauen.html`): Einen eigenen Träger bauen und dann in Station 2 den Verlauf von Q oder in Station 3 die Leine (M)
+  vorhersagen. Danach lässt sich ein Link kopieren, mit dem andere denselben Träger bekommen und den eigenen Treffer schlagen müssen.
 
 ## Spielen
 
@@ -59,6 +61,13 @@ Station 3:
 Sterne beim Verschieben: im ersten Versuch drei, im zweiten zwei, danach einer. Beim Antippen bis 0,25 m daneben drei,
 bis 0,5 m zwei. Beim Zeichnen ab 70, 85 und 95 % Treffer (0,4 kNm Spielraum).
 
+Baukasten: Träger 4 m, Raster 0,5 m; Festlager und Loslager oder eine Einspannung an einem Ende; Einzellasten 0,5 bis 4,5 kN,
+Streckenlasten 0,5 bis 2 kN/m, höchstens fünf Lasten. Das Spiel prüft laufend, ob der Träger statisch bestimmt ist und ins Bild passt:
+für Q (Station 2) höchstens 4,5 kN Querkraft und Lagerkraft, für M (Station 3) ohne Einspannung und M von −2,4 bis 3,6 kNm.
+Lagerkräfte und Verläufe zeigt der Baukasten nicht, die sollen erst geschätzt werden. Tipp und Auflösung entstehen aus der Lösung.
+Der Träger steht im Link, etwa `bauen.html#bau-f0~l4~F1:4~q2-4:1` (Festlager bei 0 m, Loslager bei 4 m, 4 kN bei 1 m,
+1 kN/m von 2 bis 4 m); `spur.html#bau-…` und `leine.html#bau-…` starten ihn direkt, `~z80` setzt 80 % als Ziel zum Schlagen.
+
 ## Wie gerechnet wird
 
 - Koordinaten wie in der TM1-Vorlesung: x nach rechts, z nach unten, y zum Betrachter; M_y positiv gegen den Uhrzeigersinn
@@ -77,6 +86,12 @@ Prüfung gegen Handrechnungen, auch vom jeweils anderen Stück aus, mit Gleichge
 node test/mech.test.js
 ```
 
+Baukasten (Code im Link, Prüfung, die Level von Station 2 und 3 nachgebaut, erzeugte Texte):
+
+```
+node test/bau.test.js
+```
+
 ## Dateien
 
 - `src/mech.js`: Statik (Lagerkräfte, Schnitt, Schnittgrößen, Querkraft- und Momentenverlauf)
@@ -85,3 +100,5 @@ node test/mech.test.js
 - `src/levels.js`, `src/game.js`: Station 1
 - `src/spur-levels.js`, `src/spur.js`: Station 2
 - `src/leine-levels.js`, `src/leine.js`: Station 3
+- `src/bau.js`: Baukasten-Logik (Code im Link, Prüfung, Level mit Tipp und Auflösung für Station 2 und 3)
+- `bauen.html`, `src/bauen.js`: Baukasten

@@ -110,3 +110,9 @@ canvas.grabbing { cursor: grabbing; }
 /* Vorstufe in einem eigenen Spiel: gestrichelt, damit sie nicht wie eine Station aussieht */
 .stations a.pre { border-style: dashed; color: var(--ink2); }
 canvas.pen { cursor: crosshair; }
+/* Baukasten: Werkzeuge wie die Levelknöpfe, das gewählte dunkel */
+.tools { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.tools button { font: 600 13.5px/1.15 var(--f-body); color: var(--ink); background: transparent; border: 1.5px solid var(--rule);
+  padding: 9px 4px 7px; border-radius: 2px; cursor: pointer; }
+.tools button[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--sheet); }
+.tools button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
